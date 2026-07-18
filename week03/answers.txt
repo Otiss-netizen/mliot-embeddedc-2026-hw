@@ -1,0 +1,36 @@
+# 1.1. Công dụng chính của 4 công cụ:
+CMake: Đóng vai trò sinh cấu hình build bằng cách đọc file mô tả dự án (CMakeLists.txt) để tạo ra các kịch bản cho Ninja thực thi.  
+Ninja: Là công cụ build thực thi, chuyên chạy các lệnh biên dịch một cách song song và tăng dần (lần đầu Ninja sẽ build tất cả các file.c nhưng những lần sau chỉ biên dịch lại những phần đã thay đổi).  
+Compiler (arm-none-eabi-gcc): Trình biên dịch chéo có nhiệm vụ dịch mã nguồn C của dự án thành mã máy dành riêng cho kiến trúc chip ARM.  
+STM32_Programmer_CLI: Công cụ chuyên dụng để nạp firmware qua mạch nạp ST-Link, thực hiện ghi file nhị phân (.bin) thẳng vào không gian bộ nhớ Flash của MCU và khởi động lại (reset) thiết bị. Giao tiếp với STM32 qua SWD.
+
+# 1.2. Trình tự logic khi kết hợp 4 công cụ:
+Bước 1 (CMake): CMake chạy đầu tiên, đọc mô tả dự án để định hình cấu trúc và tự động sinh ra kịch bản chi tiết (build.ninja) để chuẩn bị cho quá trình biên dịch.  
+Bước 2 (Ninja & Compiler): Ninja chạy tiếp theo, đọc file kịch bản vừa được CMake tạo ra để biết chính xác sự phụ thuộc giữa các file. Ninja sẽ gọi Compiler (arm-none-eabi-gcc) thực hiện dịch độc lập các file .c thành file đối tượng .o, rồi liên kết chúng thành file .elf và tạo bản nhị phân .bin.  
+Bước 3 (STM32_Programmer_CLI): Công cụ này chạy cuối cùng, lấy sản phẩm cuối cùng của quá trình trên (file .bin) để nạp trực tiếp xuống chip thông qua chuẩn giao tiếp SWD.  
+
+
+# 2.1. Vai trò của Linker và khác biệt giữa file .bin và .o:
+Lý do cần đến Linker: Trình biên dịch tạo ra các file .o một cách độc lập nên tại giai đoạn này, các tệp hoàn toàn chưa biết địa chỉ tuyệt đối của mình. Nếu mã nguồn có chứa hàm gọi chéo giữa các file khác nhau, trình biên dịch chỉ để lại một ô trống (relocation). Công cụ Linker đứng ra để gom tất cả các file .o lại, phân bổ địa chỉ tuyệt đối tuân theo linker script, đồng thời giải quyết các lời gọi hàm đó (symbol resolution).  
+Điểm khác biệt cốt lõi:
+File .o chứa mã lệnh, các phân vùng (section) và bảng symbol nhưng vẫn chưa biết địa chỉ tuyệt đối.
+File .bin là một tập tin nhị phân thuần, không địa chỉ cũng như dữ liệu gỡ lỗi (debug/symbol), nó chỉ chứa duy nhất các byte dữ liệu sẽ được ghi thẳng vào phần cứng Flash.  
+
+# 2.2. Vai trò của Ninja trong tính năng "Build tăng dần":
+Vai trò tiết kiệm thời gian: Ninja rút ngắn đáng kể thời gian biên dịch cho lập trình viên bằng cách song song hóa quá trình xử lý, giúp vòng lặp phát triển ứng dụng (sửa code rồi nạp lại) diễn ra cực nhanh.  
+Cơ chế hoạt động: Ninja biết được file nào vừa sửa dựa trên việc theo dõi và lưu lại dấu thời gian (timestamp). Cùng với đồ thị phụ thuộc rõ ràng đã được cấp trước đó, Ninja sẽ chỉ biên dịch đúng tệp nguồn hoặc những tệp liên quan đến header vừa bị chỉnh sửa, giữ nguyên các phần còn lại.  
+
+
+# 3.1. Phân vùng VMA/LMA và sự tồn tại của 2 loại địa chỉ:
+Sự khác nhau: LMA (Load Memory Address) chính là địa chỉ tải, nơi dữ liệu nằm bền vững trên bộ nhớ FLASH, trong khi VMA (Virtual/Runtime Memory Address) là địa chỉ không gian trên RAM mà dữ liệu sẽ chạy và thao tác thực tế.  
+Lý do vùng .data cần cả hai: Phân vùng .data đảm nhận việc lưu trữ các biến toàn cục có giá trị khởi tạo sẵn. Vi điều khiển bắt buộc phải lưu giá trị này lên không gian FLASH (LMA) để không bị mất khi thiết bị tắt nguồn. Dù vậy, do chương trình cần phải đọc và ghi vào biến liên tục ở tốc độ cao trong thời gian thực thi, dữ liệu này phải sống trên vùng RAM (VMA).  
+
+# 3.2. Chuyện gì xảy ra nếu Reset_Handler quên nhiệm vụ?
+Trình tự của hệ thống quy định khối .data sẽ được sao chép nguyên trạng từ vị trí tĩnh của FLASH sang RAM trước khi đi vào hàm main(). Nếu hàm Reset_Handler không chạy hành động sao chép này, các biến toàn cục trong chương trình sẽ không nhận được dữ liệu cài đặt ban đầu. Kết quả là các biến mang giá trị rác ngẫu nhiên vốn có mặt trên RAM, gây ra sai lệch toàn bộ logic hoạt động của chương trình ngay từ lúc khởi động.  
+
+
+# 4.1. 
+cmake -B build -G Ninja
+
+# 4.2. 
+ninja -C build
