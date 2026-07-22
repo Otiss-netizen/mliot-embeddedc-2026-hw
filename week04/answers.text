@@ -1,0 +1,19 @@
+# Task 1.1
+Chế độ Output Push-Pull:
+Xuất mức 1 (3.3V): Transistor PMOS dẫn, NMOS ngắt. Dòng điện được "đẩy" từ VDD ra chân GPIO.  
+Xuất mức 0 (0V): Transistor PMOS ngắt, NMOS dẫn. Dân GPIO được "kéo" xả xuống GND.  
+
+
+# Task 1.2
+Chế độ Input:
+Khi nào dùng Pull-up: Khi giao tiếp với tín hiệu đầu vào không có mức điện áp xác định (VD: nút nhấn cơ học nối mass, mạch Open-Drain) để ghim sẵn mức logic 1.
+Hiện tượng Floating (Lơ lửng): Chân GPIO sẽ đóng vai trò như ăng-ten thu nhiễu môi trường. Kết quả đọc về thanh ghi IDR sẽ nhảy liên tục, hỗn loạn giữa mức 0 và 1.
+
+# Task 2
+Tầm quan trọng của Xung nhịp (Clock)
+Lý do ST mặc định tắt Clock: Để tối ưu hóa năng lượng (cơ chế Clock Gating), ngăn các ngoại vi không dùng tiêu thụ điện và sinh nhiệt lãng phí.  
+Nếu cấu hình mà quên bật Clock: Ngoại vi sẽ ở trạng thái "ngủ" và không hoạt động. Mọi lệnh ghi/đọc vào các thanh ghi của ngoại vi đó đều vô tác dụng và không được lưu lại.  
+
+# Task 5
+- Cách đấu nối: Cách 2 - Điều khiển qua Firmware
+- Link video demo: https://drive.google.com/file/d/1_NzxfIOqntGf2Wyvu8AKrgCWpqKfUEtE/view?usp=drivesdk

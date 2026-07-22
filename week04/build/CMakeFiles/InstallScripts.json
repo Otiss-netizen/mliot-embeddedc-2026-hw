@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/Mr Phat/OneDrive/Documents/ENGINEERING/mliot-embeddedc-2026-hw/week04/build/cmake_install.cmake",
+		"C:/Users/Mr Phat/OneDrive/Documents/ENGINEERING/mliot-embeddedc-2026-hw/week04/build/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
